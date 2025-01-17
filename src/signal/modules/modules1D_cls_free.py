@@ -135,20 +135,20 @@ class WeightStandardizedConv2d(nn.Conv1d):
         eps = 1e-5 if x.dtype == torch.float32 else 1e-3
 
         weight = self.weight
-        mean = reduce(weight, 'o ... -> o 1 1', 'mean')
-        var = reduce(weight, 'o ... -> o 1 1', partial(torch.var, unbiased = False))
+        mean = reduce(weight, 'o ... -> o 1 1', 'mean')  # 调用einops库，保存batch维度，在通道和时间步长上计算均值
+        var = reduce(weight, 'o ... -> o 1 1', partial(torch.var, unbiased = False))  # 在通道和时间步长维度上计算方差
         normalized_weight = (weight - mean) * (var + eps).rsqrt()
 
         return F.conv1d(x, normalized_weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
 
-class LayerNorm(nn.Module):
+class LayerNorm(nn.Module):  # 这里没看明白，怎么感觉这里的layernorm有点奇怪
     def __init__(self, dim):
         super().__init__()
         self.g = nn.Parameter(torch.ones(1, dim, 1))
 
     def forward(self, x):
         eps = 1e-5 if x.dtype == torch.float32 else 1e-3
-        var = torch.var(x, dim = 1, unbiased = False, keepdim = True)
+        var = torch.var(x, dim = 1, unbiased = False, keepdim = True)  # unbiased：False 使用有偏方差
         mean = torch.mean(x, dim = 1, keepdim = True)
         return (x - mean) * (var + eps).rsqrt() * self.g
 
@@ -172,9 +172,9 @@ class SinusoidalPosEmb(nn.Module):
     def forward(self, x):
         device = x.device
         half_dim = self.dim // 2
-        emb = math.log(10000) / (half_dim - 1)
-        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
-        emb = x[:, None] * emb[None, :]
+        emb = math.log(10000) / (half_dim - 1)  # 其实和transformer的公式是几乎一样的
+        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)  # 指数对数换底公式
+        emb = x[:, None] * emb[None, :]  # 等价于 emb = x.view(-1, 1) * emb.view(1, -1)
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
 
@@ -186,13 +186,13 @@ class RandomOrLearnedSinusoidalPosEmb(nn.Module):
         super().__init__()
         assert (dim % 2) == 0
         half_dim = dim // 2
-        self.weights = nn.Parameter(torch.randn(half_dim), requires_grad = not is_random)
+        self.weights = nn.Parameter(torch.randn(half_dim), requires_grad = not is_random)  # is_random 取非
 
     def forward(self, x):
         x = rearrange(x, 'b -> b 1')
         freqs = x * rearrange(self.weights, 'd -> 1 d') * 2 * math.pi
         fouriered = torch.cat((freqs.sin(), freqs.cos()), dim = -1)
-        fouriered = torch.cat((x, fouriered), dim = -1)
+        fouriered = torch.cat((x, fouriered), dim = -1)  # 这里还拼接干嘛呢，如果这里拼接将会得到形状为（b, dim+1）的time_emb
         return fouriered
 
 # building block modules
