@@ -258,7 +258,7 @@ class LinearAttention(nn.Module):
 
     def forward(self, x):
         b, c, n = x.shape
-        qkv = self.to_qkv(x).chunk(3, dim = 1)
+        qkv = self.to_qkv(x).chunk(3, dim = 1)  # q, k, v 均为 (b, c, n) n是序列长度
         q, k, v = map(lambda t: rearrange(t, 'b (h c) n -> b h c n', h = self.heads), qkv)
 
         q = q.softmax(dim = -2)
