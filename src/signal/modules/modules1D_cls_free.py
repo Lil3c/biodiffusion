@@ -144,7 +144,7 @@ class WeightStandardizedConv2d(nn.Conv1d):  # 卷积权重标准化
 class LayerNorm(nn.Module):  # 这里没看明白，怎么感觉这里的layernorm有点奇怪
     def __init__(self, dim):
         super().__init__()
-        self.g = nn.Parameter(torch.ones(1, dim, 1))
+        self.g = nn.Parameter(torch.ones(1, dim, 1))  # 这个g是一个可学习的通道调剂参数
 
     def forward(self, x):
         eps = 1e-5 if x.dtype == torch.float32 else 1e-3
