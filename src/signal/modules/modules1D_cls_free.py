@@ -126,7 +126,7 @@ def Upsample(dim, dim_out = None):
 def Downsample(dim, dim_out = None):
     return nn.Conv1d(dim, default(dim_out, dim), 4, 2, 1)
 
-class WeightStandardizedConv2d(nn.Conv1d):
+class WeightStandardizedConv2d(nn.Conv1d):  # 卷积权重标准化
     """
     https://arxiv.org/abs/1903.10520
     weight standardization purportedly works synergistically with group normalization
