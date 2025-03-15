@@ -105,7 +105,7 @@ def prob_mask_like(shape, prob, device):
     elif prob == 0:
         return torch.zeros(shape, device = device, dtype = torch.bool)
     else:
-        return torch.zeros(shape, device = device).float().uniform_(0, 1) < prob
+        return torch.zeros(shape, device = device).float().uniform_(0, 1) < prob  # 按照概率生成bool张量mask
 
 # small helper modules
 
@@ -422,7 +422,7 @@ class Unet1D_cls_free(nn.Module):
         x,
         time,
         classes,
-        cond_drop_prob = None
+        cond_drop_prob = None  # 指定类别信息丢弃概率
     ):
         batch, device = x.shape[0], x.device
 
@@ -434,9 +434,9 @@ class Unet1D_cls_free(nn.Module):
 
         if cond_drop_prob > 0:
             keep_mask = prob_mask_like((batch,), 1 - cond_drop_prob, device = device)
-            null_classes_emb = repeat(self.null_classes_emb, 'd -> b d', b = batch)
+            null_classes_emb = repeat(self.null_classes_emb, 'd -> b d', b = batch)  # 表示无类别信息的类别嵌入
 
-            classes_emb = torch.where(
+            classes_emb = torch.where(  # 按照mask选择有类别信息的嵌入还是无类别信息的嵌入
                 rearrange(keep_mask, 'b -> b 1'),
                 classes_emb,
                 null_classes_emb
